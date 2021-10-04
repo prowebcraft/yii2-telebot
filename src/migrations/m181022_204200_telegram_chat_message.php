@@ -21,10 +21,12 @@ class m181022_204200_telegram_chat_message extends Migration
             `chat_id`  varchar(20) NOT NULL ,
             `direction` varchar(10) null comment 'Направление',
             `message_id`  int(11) NULL ,
-            `text`  text NULL ,
+            `text` text NULL ,
+            `created_at`  datetime NULL DEFAULT CURRENT_TIMESTAMP,
             `params`  longtext NULL ,
         PRIMARY KEY (`id`),
         FOREIGN KEY (`chat_id`) REFERENCES `telegram_chat` (`telegram_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+        INDEX (`created_at`),
         UNIQUE INDEX (`chat_id`, `message_id`) 
         );
       ");

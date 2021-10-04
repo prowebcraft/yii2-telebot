@@ -3,8 +3,9 @@
 namespace prowebcraft\yii2telebot\models;
 
 use prowebcraft\yii2params\Params;
+use prowebcraft\yii2telebot\models\base\TelegramChatMessageBase;
 
-class TelegramChatMessage extends \common\models\base\ChatMessageBase
+class TelegramChatMessage extends TelegramChatMessageBase
 {
     use Params;
 

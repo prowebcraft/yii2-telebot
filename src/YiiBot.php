@@ -52,6 +52,7 @@ class YiiBot extends Telebot
             $botModel->save();
         }
         $this->botModel = $botModel;
+        $this->botId = $botModel->id;
     }
 
     /**
@@ -145,12 +146,19 @@ class YiiBot extends Telebot
     {
         if (!$reload && isset($this->chats[$id]))
             return $this->chats[$id];
-        if (!($chat = TelegramChat::findOne(['telegram_id' => $id]))) {
+        if (!($chat = TelegramChat::findOne([
+            'bot_id' => $this->botId,
+            'telegram_id' => $id
+        ]))) {
             $chat = new TelegramChat();
             $chat
+                ->setBotId($this->botId)
                 ->setTelegramId($id)
                 ->setCreatedAt(time())
                 ->save();
+            if ($errors = $chat->getErrors()) {
+                $this->error('Error saving chat to database: %s', $errors);
+            }
         }
         $this->chats[$id] = $chat;
         return $chat;

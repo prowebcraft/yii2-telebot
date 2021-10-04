@@ -19,11 +19,14 @@ class m181022_204100_telegram_chat extends Migration
                 `id`  int(10) UNSIGNED NOT NULL AUTO_INCREMENT ,
                 `bot_id`  int(10) UNSIGNED NOT NULL,
                 `telegram_id`  varchar(20) NOT NULL ,
+                `created_at`  datetime NULL DEFAULT CURRENT_TIMESTAMP,
+                `last_message_at`  datetime NULL,
                 `name`  varchar(255) NULL ,
                 `params`  longtext NULL ,
             PRIMARY KEY (`id`),
             FOREIGN KEY (`bot_id`) REFERENCES `telegram_bot` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-            UNIQUE INDEX (`telegram_id`) 
+            UNIQUE INDEX (`telegram_id`),
+            INDEX (`last_message_at`)
             );
         ");
     }
