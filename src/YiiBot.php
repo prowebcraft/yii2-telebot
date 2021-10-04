@@ -49,6 +49,9 @@ class YiiBot extends Telebot
             $botModel = new TelegramBot([
                 'name' => $name
             ]);
+            if (!empty($botConfig['default_bot_config']) && is_array($botConfig['default_bot_config'])) {
+                $botModel->setParam('config', $botConfig['default_bot_config']);
+            }
             $botModel->save();
         }
         $this->botModel = $botModel;
@@ -72,7 +75,7 @@ class YiiBot extends Telebot
         $this->translator = new Translator('en_US');
         //Add Default Resourse
         $this->translator->addLoader('csv', new CsvFileLoader());
-        $filesDir = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'files';
+        $filesDir = dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . 'telebot' . DIRECTORY_SEPARATOR . 'files';
         $this->translator->addResource('csv', $filesDir . DIRECTORY_SEPARATOR . 'locale'
             . DIRECTORY_SEPARATOR . 'system.ru.csv', 'ru');
         $this->configTranslations($this->translator);
@@ -108,7 +111,7 @@ class YiiBot extends Telebot
      */
     public function getConfig($key, $default = null)
     {
-        return $this->botModel->getParam('config.' . $key, $default);
+        return $this->botModel->getParam($key, $default);
     }
 
     /**
@@ -116,7 +119,7 @@ class YiiBot extends Telebot
      */
     public function setConfig($key, $value, $save = true)
     {
-        $this->botModel->setParam('config.'.$key, $value);
+        $this->botModel->setParam($key, $value);
         if ($save) {
             $this->botModel->save();
         }
@@ -128,7 +131,7 @@ class YiiBot extends Telebot
      */
     public function deleteConfig($key, $save = true)
     {
-        $this->botModel->unsetParam('config.' . $key);
+        $this->botModel->unsetParam($key);
         if ($save) {
             $this->botModel->save();
         }
