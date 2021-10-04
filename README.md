@@ -75,4 +75,6 @@ class BotController extends \yii\console\Controller
 }
 ```
 
-Run you bot in telegram and send him `/hi` command
+Run your bot with command `php yii bot/run`;
+
+Send `/hi` to your bot in Telegram
