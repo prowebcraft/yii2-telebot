@@ -5,7 +5,7 @@ use yii\db\Migration;
 /**
  * Class m181022_204456_telegram_chats
  */
-class m181022_204456_telegram_chat extends Migration
+class m181022_204100_telegram_chat extends Migration
 {
     /**
      * {@inheritdoc}
