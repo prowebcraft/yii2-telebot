@@ -1,0 +1,26 @@
+{
+    "name": "prowebcraft/yii2-telebot",
+    "description": "Telegram Bot extension for Yii2 Framework",
+    "keywords": ["yii2", "telegram", "bot"],
+    "homepage": "https://github.com/prowebcraft/yii2-telebot",
+    "type": "yii2-extension",
+    "license": "GPL-2.0-only",
+    "minimum-stability": "dev",
+    "authors": [
+        {
+            "name": "Andrey Mistulov",
+            "email": "prowebcraft@gmail.com",
+            "homepage": "http://prowebcraft.ru"
+        }
+    ],
+    "require": {
+        "yiisoft/yii2": "*",
+        "php": ">=7.4.0",
+        "prowebcraft/telebot": "dev-master"
+    },
+    "autoload": {
+        "psr-4": {
+            "prowebcraft\\yii2telebot\\": "src"
+        }
+    }
+}
