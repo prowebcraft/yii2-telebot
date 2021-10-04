@@ -6,13 +6,25 @@
  * Date: 04.10.2021
  */
 
-namespace common\models;
+namespace prowebcraft\yii2telebot;
 
+use Exception;
+use Prowebcraft\Telebot\Clients\Basic;
 use Prowebcraft\Telebot\Telebot;
+use prowebcraft\yii2telebot\models\TelegramBot;
+use prowebcraft\yii2telebot\models\TelegramChat;
+use prowebcraft\yii2telebot\models\TelegramChatMessage;
+use Symfony\Component\Translation\Loader\CsvFileLoader;
+use Symfony\Component\Translation\Translator;
+use TelegramBot\Api\BotApi;
+use TelegramBot\Api\Client;
+use yii\log\Logger;
 
 class YiiBot extends Telebot
 {
     protected ?int $botId = null;
+    protected ?TelegramBot $botModel = null;
+    protected ?string $botToken = null;
     protected ?string $botName = null;
     protected $chats = [];
 
@@ -21,13 +33,105 @@ class YiiBot extends Telebot
         if (!$botConfig = \Yii::$app->params['bots'][$name] ?? null) {
             throw new \InvalidArgumentException('Please add bot '.$name.' config in params');
         }
-        if (!isset($botConfig['token'])) {
+        if (empty($botConfig['token'])) {
             throw new \InvalidArgumentException('Please fill bot '.$name.' token in params');
         }
-        $botOptions = array_merge([], $botConfig['options'] ?? []);
+        $this->botToken = $botConfig['token'];
+        $root = dirname(__DIR__, 4);
+        $botOptions = array_merge([
+            'appDir' => $root . DIRECTORY_SEPARATOR . 'console' . DIRECTORY_SEPARATOR . 'runtime',
+            'runtimeDir' => $root . DIRECTORY_SEPARATOR . 'console' . DIRECTORY_SEPARATOR . 'runtime',
+        ], $botConfig['options'] ?? []);
         parent::__construct($name, null, null, null, $botOptions);
-
         $this->botName = $name;
+        //init bot model
+        if (!$botModel = TelegramBot::findOne(['name' => $name])) {
+            $botModel = new TelegramBot([
+                'name' => $name
+            ]);
+            $botModel->save();
+        }
+        $this->botModel = $botModel;
+    }
+
+    /**
+     * Perform init (load database, restore replies, config loggers etc)
+     * @throws Exception
+     */
+    public function init()
+    {
+        //Restore Waiting Messages
+        $this->restoreReplies();
+
+        /** @var BotApi|Client $bot */
+        $bot = new Basic($this->botToken, null, $this->getConfig('config.proxy'));
+        $this->telegram = $bot;
+
+        //Init Translations
+        $this->translator = new Translator('en_US');
+        //Add Default Resourse
+        $this->translator->addLoader('csv', new CsvFileLoader());
+        $filesDir = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'files';
+        $this->translator->addResource('csv', $filesDir . DIRECTORY_SEPARATOR . 'locale'
+            . DIRECTORY_SEPARATOR . 'system.ru.csv', 'ru');
+        $this->configTranslations($this->translator);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function log($message, $level = \Monolog\Logger::INFO, $extra = [])
+    {
+        $yiiLevel = Logger::LEVEL_INFO;
+        switch ($level) {
+            case \Monolog\Logger::ERROR:
+            case \Monolog\Logger::EMERGENCY:
+            case \Monolog\Logger::CRITICAL:
+            case \Monolog\Logger::ALERT:
+                $yiiLevel = Logger::LEVEL_ERROR;
+                break;
+            case \Monolog\Logger::NOTICE:
+            case \Monolog\Logger::WARNING:
+                $yiiLevel = Logger::LEVEL_WARNING;
+                break;
+            case \Monolog\Logger::DEBUG:
+                $yiiLevel = Logger::LEVEL_TRACE;
+                break;
+        }
+        \Yii::getLogger()->log($message, $yiiLevel, 'bot.'.$this->botName);
+    }
+
+
+    /**
+     * @inheritDoc
+     */
+    public function getConfig($key, $default = null)
+    {
+        return $this->botModel->getParam('config.' . $key, $default);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function setConfig($key, $value, $save = true)
+    {
+        $this->botModel->setParam('config.'.$key, $value);
+        if ($save) {
+            $this->botModel->save();
+        }
+        return $this;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function deleteConfig($key, $save = true)
+    {
+        $this->botModel->unsetParam('config.' . $key);
+        if ($save) {
+            $this->botModel->save();
+        }
+        return $this;
     }
 
 
@@ -35,14 +139,14 @@ class YiiBot extends Telebot
      * Получение модели чата
      * @param $id
      * @param bool $reload
-     * @return Chat|null
+     * @return TelegramChat|null
      */
     public function getChat($id, $reload = false)
     {
         if (!$reload && isset($this->chats[$id]))
             return $this->chats[$id];
-        if (!($chat = Chat::findOne(['telegram_id' => $id]))) {
-            $chat = new Chat();
+        if (!($chat = TelegramChat::findOne(['telegram_id' => $id]))) {
+            $chat = new TelegramChat();
             $chat
                 ->setTelegramId($id)
                 ->setCreatedAt(time())
@@ -73,12 +177,12 @@ class YiiBot extends Telebot
                         'lang' => $user->getLanguageCode(),
                     ])
                     ->save();
-                $message = new ChatMessage();
+                $message = new TelegramChatMessage();
                 $message
                     ->setChatId($chatId)
                     ->setMessageId($this->getMessageId())
                     ->setText($update->getMessage() ? $update->getMessage()->getText() : null)
-                    ->setDirection(ChatMessage::DIRECTION_FROM)
+                    ->setDirection(TelegramChatMessage::DIRECTION_FROM)
                     ->setParams($update->toJson(true))
                     ->setCreatedAt(time())
                     ->save();
@@ -114,11 +218,11 @@ class YiiBot extends Telebot
         $chatMessage = null;
         try {
             $this->getChat($to);
-            $chatMessage = new ChatMessage();
+            $chatMessage = new TelegramChatMessage();
             $chatMessage
                 ->setChatId($to)
                 ->setText($message)
-                ->setDirection(ChatMessage::DIRECTION_TO)
+                ->setDirection(TelegramChatMessage::DIRECTION_TO)
                 ->setParams([
                     'parse' => $parse,
                     'disable_preview' => $disablePreview,

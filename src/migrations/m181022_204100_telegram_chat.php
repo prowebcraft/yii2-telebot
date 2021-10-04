@@ -1,5 +1,7 @@
 <?php
 
+namespace prowebcraft\yii2telebot\migrations;
+
 use yii\db\Migration;
 
 /**

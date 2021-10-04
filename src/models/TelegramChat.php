@@ -1,10 +1,10 @@
 <?php
 
-namespace common\models;
+namespace prowebcraft\yii2telebot\models;
 
 use prowebcraft\yii2params\Params;
 
-class Chat extends \common\models\base\ChatBase
+class TelegramChat extends \common\models\base\ChatBase
 {
     use Params;
 
