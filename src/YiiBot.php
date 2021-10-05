@@ -9,6 +9,7 @@
 namespace prowebcraft\yii2telebot;
 
 use Exception;
+use Prowebcraft\Dot;
 use Prowebcraft\Telebot\Clients\Basic;
 use Prowebcraft\Telebot\Telebot;
 use prowebcraft\yii2telebot\models\TelegramBot;
@@ -26,6 +27,7 @@ class YiiBot extends Telebot
     protected ?TelegramBot $botModel = null;
     protected ?string $botToken = null;
     protected ?string $botName = null;
+    protected ?array $botParams = null;
     protected $chats = [];
 
     public function __construct(string $name)
@@ -36,7 +38,8 @@ class YiiBot extends Telebot
         if (empty($botConfig['token'])) {
             throw new \InvalidArgumentException('Please fill bot '.$name.' token in params');
         }
-        $this->botToken = $botConfig['token'];
+        $this->botParams = $botConfig;
+        $this->botToken = $this->getBotParam('token');
         $root = dirname(__DIR__, 4);
         $botOptions = array_merge([
             'appDir' => $root . DIRECTORY_SEPARATOR . 'console' . DIRECTORY_SEPARATOR . 'runtime',
@@ -56,6 +59,17 @@ class YiiBot extends Telebot
         }
         $this->botModel = $botModel;
         $this->botId = $botModel->id;
+    }
+
+    /**
+     * Get Bot Yii2 Param configuration
+     * @param string $key
+     * @param mixed|null $default
+     * @return array|mixed|null
+     */
+    public function getBotParam(string $key, mixed $default = null)
+    {
+        return Dot::getValue($this->botParams, $key, $default);
     }
 
     /**
@@ -179,8 +193,14 @@ class YiiBot extends Telebot
                 $chat = $this->getChat($chatId);
                 $message = $this->getContext();
                 $user = $message->getFrom();
+                if ($this->isChatPrivate()) {
+                    $chatName = $this->getFromName($message, true);
+                } else {
+                    $chatName = $message?->getChat()->getTitle();
+                }
                 $chat->setLastMessageAt(time())
-                    ->setName($this->getFromName($message, true))
+                    ->setName($chatName)
+                    ->setType($this->getChatType())
                     ->setParam('user', [
                         'firstname' => $user->getFirstName(),
                         'lastname' => $user->getLastName(),

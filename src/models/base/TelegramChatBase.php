@@ -12,6 +12,7 @@ use prowebcraft\yii2telebot\models\TelegramChatMessage;
  * @property integer $id
  * @property integer $bot_id
  * @property string $telegram_id
+ * @property string $type
  * @property string $created_at
  * @property string $last_message_at
  * @property string $name
@@ -41,6 +42,7 @@ class TelegramChatBase extends \yii\db\ActiveRecord
             [['bot_id'], 'integer'],
             [['created_at', 'last_message_at', 'params'], 'safe'],
             [['telegram_id'], 'string', 'max' => 20],
+            [['type'], 'string', 'max' => 10],
             [['name'], 'string', 'max' => 255],
             [['telegram_id'], 'unique']
         ];
@@ -55,6 +57,7 @@ class TelegramChatBase extends \yii\db\ActiveRecord
             'id' => 'ID',
             'bot_id' => 'Bot ID',
             'telegram_id' => 'Telegram ID',
+            'type' => 'Type',
             'created_at' => 'Created At',
             'last_message_at' => 'Last Message At',
             'name' => 'Name',
@@ -120,6 +123,26 @@ class TelegramChatBase extends \yii\db\ActiveRecord
     public function getTelegramId()
     {
         return $this->telegram_id;
+    }
+
+    /**
+     * Set type property.
+     * @param string $type
+     * @return $this
+     */
+    public function setType($type)
+    {
+        $this->type = $type;
+        return $this;
+    }
+
+    /**
+     * Get type property.
+     * @return string
+     */
+    public function getType()
+    {
+        return $this->type;
     }
 
     /**
