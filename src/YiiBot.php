@@ -52,6 +52,7 @@ class YiiBot extends Telebot
             $botModel = new TelegramBot([
                 'name' => $name
             ]);
+            $botModel->setParam('className', static::class);
             if (!empty($botConfig['default_bot_config']) && is_array($botConfig['default_bot_config'])) {
                 $botModel->setParam('config', $botConfig['default_bot_config']);
             }
