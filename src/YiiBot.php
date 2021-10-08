@@ -138,6 +138,7 @@ class YiiBot extends Telebot
         if ($save) {
             $this->botModel->save();
         }
+
         return $this;
     }
 
@@ -150,6 +151,20 @@ class YiiBot extends Telebot
         if ($save) {
             $this->botModel->save();
         }
+
+        return $this;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function addConfig($key, $value, $save = true)
+    {
+        $this->botModel->addParam($key, $value);
+        if ($save) {
+            $this->botModel->save();
+        }
+
         return $this;
     }
 
