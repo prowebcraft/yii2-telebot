@@ -44,7 +44,7 @@ class TelegramChatBase extends \yii\db\ActiveRecord
             [['telegram_id'], 'string', 'max' => 20],
             [['type'], 'string', 'max' => 10],
             [['name'], 'string', 'max' => 255],
-            [['telegram_id'], 'unique']
+            [['telegram_id', 'bot_id'], 'unique', 'targetAttribute' => ['telegram_id', 'bot_id'], 'message' => Yii::t('app', 'The combination of {firstLabels} and {lastLabel} has already been taken.', ['firstLabels' => 'Bot ID', 'lastLabel' => 'Telegram ID'])]
         ];
     }
 
