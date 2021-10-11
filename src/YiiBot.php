@@ -63,6 +63,17 @@ class YiiBot extends Telebot
     }
 
     /**
+     * @inheritDoc
+     */
+    protected function proceedRun(): bool
+    {
+        // Check database connection on each iteration
+        \Yii::$app->db->createCommand("SELECT 1")->query();
+        return parent::proceedRun();
+    }
+
+
+    /**
      * Get Bot Yii2 Param configuration
      * @param string $key
      * @param mixed|null $default
