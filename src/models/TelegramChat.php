@@ -9,6 +9,8 @@ class TelegramChat extends TelegramChatBase
 {
     use Params;
 
+    public bool $cached = false;
+
     /**
      * @param string $telegramId
      * @return $this

@@ -5,6 +5,7 @@ namespace prowebcraft\yii2telebot\models\base;
 use Yii;
 use prowebcraft\yii2telebot\models\TelegramBot;
 use prowebcraft\yii2telebot\models\TelegramChatMessage;
+use prowebcraft\yii2telebot\models\TelegramChatParticipant;
 
 /**
  * This is the model class for table "telegram_chat".
@@ -20,6 +21,7 @@ use prowebcraft\yii2telebot\models\TelegramChatMessage;
  *
  * @property TelegramBot $bot
  * @property TelegramChatMessage[] $telegramChatMessages
+ * @property TelegramChatParticipant[] $telegramChatParticipants
  */
 class TelegramChatBase extends \yii\db\ActiveRecord
 {
@@ -242,6 +244,13 @@ class TelegramChatBase extends \yii\db\ActiveRecord
     public function getTelegramChatMessages()
     {
         return $this->hasMany(TelegramChatMessage::className(), ['chat_id' => 'telegram_id']);
+    }
+
+    /**
+     * @return \yii\db\ActiveQuery|TelegramChatParticipant     */
+    public function getTelegramChatParticipants()
+    {
+        return $this->hasMany(TelegramChatParticipant::className(), ['user_id' => 'id']);
     }
 
 }

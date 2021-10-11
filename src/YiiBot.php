@@ -15,10 +15,12 @@ use Prowebcraft\Telebot\Telebot;
 use prowebcraft\yii2telebot\models\TelegramBot;
 use prowebcraft\yii2telebot\models\TelegramChat;
 use prowebcraft\yii2telebot\models\TelegramChatMessage;
+use prowebcraft\yii2telebot\models\TelegramChatParticipant;
 use Symfony\Component\Translation\Loader\CsvFileLoader;
 use Symfony\Component\Translation\Translator;
 use TelegramBot\Api\BotApi;
 use TelegramBot\Api\Client;
+use TelegramBot\Api\Types\User;
 use yii\log\Logger;
 
 class YiiBot extends Telebot
@@ -28,7 +30,12 @@ class YiiBot extends Telebot
     protected ?string $botToken = null;
     protected ?string $botName = null;
     protected ?array $botParams = null;
-    protected $chats = [];
+    /** @var array|TelegramChat[]  */
+    protected array $chats = [];
+    /** @var array|TelegramChatParticipant[] */
+    protected array $participants = [];
+    protected ?TelegramChat $chat = null;
+    protected ?TelegramChat $user = null;
 
     public function __construct(string $name)
     {
@@ -179,17 +186,20 @@ class YiiBot extends Telebot
         return $this;
     }
 
-
     /**
      * Получение модели чата
      * @param $id
      * @param bool $reload
-     * @return TelegramChat|null
+     * @return TelegramChat
      */
-    public function getChat($id, $reload = false)
+    public function getChat($id, $reload = false): TelegramChat
     {
-        if (!$reload && isset($this->chats[$id]))
+        if (!$reload && isset($this->chats[$id])) {
+            $this->chats[$id]->cached = true;
+
             return $this->chats[$id];
+        }
+
         if (!($chat = TelegramChat::findOne([
             'bot_id' => $this->botId,
             'telegram_id' => $id
@@ -205,36 +215,110 @@ class YiiBot extends Telebot
             }
         }
         $this->chats[$id] = $chat;
+
         return $chat;
     }
+
+    /**
+     * Получение модели участника чата
+     * @param int $chatId
+     * @param int $userId
+     * @param bool $reload
+     * @return TelegramChatParticipant
+     */
+    public function getParticipant(int $chatId, int $userId, bool $reload = false): TelegramChatParticipant
+    {
+        if (!$reload && isset($this->participants[$chatId])) {
+            $this->participants[$chatId]->cached = true;
+
+            return $this->participants[$chatId];
+        }
+
+        if (!($participant = TelegramChatParticipant::findOne([
+            'chat_id' => $chatId,
+            'user_id' => $userId,
+        ]))) {
+            $participant = new TelegramChatParticipant();
+            $participant
+                ->setChatId($chatId)
+                ->setUserId($userId)
+                ->setJoinedAt(time())
+                ->setStatus(TelegramChatParticipant::STATUS_ACTIVE)
+                ->save();
+            if ($errors = $participant->getErrors()) {
+                $this->error('Error saving chat participant to database: %s', $errors);
+            }
+        }
+        $this->participants[$chatId] = $participant;
+
+        return $participant;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function onMigrateToSuperGroup(int $oldId = null)
+    {
+        unset($this->chats[$oldId]);
+        $this->chat->setTelegramId($this->getChatId())
+            ->setParam('migrated_from', $oldId)
+            ->save()
+        ;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function onNewChatMember(User $user)
+    {
+        $this->saveUserInfo($user);
+    }
+
+
+    /**
+     * @inheritDoc
+     */
+    protected function onChatMemberLeft(User $user)
+    {
+        if ($this->chat && $this->user) {
+            $participant = $this->getParticipant($this->chat->getId(), $this->user->getId());
+            $participant->setStatus(TelegramChatParticipant::STATUS_LEFT)->save();
+        }
+    }
+
 
     /**
      * @param \TelegramBot\Api\Types\Update $update
      */
     public function handleUpdate($update)
     {
-        parent::handleUpdate($update);
-
+        $this->chat = $this->user = null;
         if ($chatId = $this->getChatId()) {
             try {
                 $chat = $this->getChat($chatId);
-                $message = $this->getContext();
-                $user = $message->getFrom();
+                $this->chat = $chat;
+                if (!$message = $this->getContext()) {
+                    return;
+                }
+                if (!$user = $message->getFrom()) {
+                    return;
+                }
                 if ($this->isChatPrivate()) {
+                    $this->saveUserInfo($user);
+                    $this->user = $chat;
                     $chatName = $this->getFromName($message, true);
                 } else {
+                    // group chat
+                    $userModel = $this->saveUserInfo($user);
+                    $this->user = $userModel;
+                    $participant = $this->getParticipant($chat->id, $userModel->id);
                     $chatName = $message?->getChat()->getTitle();
                 }
                 $chat->setLastMessageAt(time())
                     ->setName($chatName)
                     ->setType($this->getChatType())
-                    ->setParam('user', [
-                        'firstname' => $user->getFirstName(),
-                        'lastname' => $user->getLastName(),
-                        'username' => $user->getUsername(),
-                        'lang' => $user->getLanguageCode(),
-                    ])
                     ->save();
+
                 $message = new TelegramChatMessage();
                 $message
                     ->setChatId($chatId)
@@ -248,6 +332,8 @@ class YiiBot extends Telebot
                 $this->error('Error saving chat message: %s', $e->getMessage());
             }
         }
+
+        parent::handleUpdate($update);
     }
 
     /**
@@ -375,6 +461,34 @@ class YiiBot extends Telebot
             return $this;
         }
         return false;
+    }
+
+    /**
+     * Save user info
+     * @param User $user
+     * @return TelegramChat
+     */
+    protected function saveUserInfo(User $user): TelegramChat
+    {
+        $userId = $user->getId();
+        $userModel = $this->getChat($userId);
+        if (!$userModel->cached) {
+            // Update user info
+            $fromName = $user->getFirstName()
+                . ($user->getLastName() ? ' ' . $user->getLastName() : '');
+            $fromName .= ($user->getUsername() ? ' @' . $user->getUsername() : '');
+            $userModel->setType('private')
+                ->setName($fromName)
+                ->setParam('user', [
+                    'firstname' => $user->getFirstName(),
+                    'lastname' => $user->getLastName(),
+                    'username' => $user->getUsername(),
+                    'lang' => $user->getLanguageCode(),
+                ])
+                ->save();
+        }
+
+        return $userModel;
     }
 
 }
