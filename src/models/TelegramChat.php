@@ -21,4 +21,18 @@ class TelegramChat extends TelegramChatBase
         return parent::setTelegramId($telegramId);
     }
 
+    /**
+     * Get chat record for telegramId
+     * @param string $telegramId
+     * @param int $botId
+     * @return $this|null
+     */
+    public static function findByTelegramId(string $telegramId, int $botId): ?self
+    {
+        return self::findOne([
+            'telegram_id' => $telegramId,
+            'bot_id' => $botId
+        ]);
+    }
+
 }
