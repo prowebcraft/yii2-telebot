@@ -259,11 +259,13 @@ class YiiBot extends Telebot
      */
     protected function onMigrateToSuperGroup(int $oldId = null)
     {
-        unset($this->chats[$oldId]);
-        $this->chat->setTelegramId($this->getChatId())
-            ->setParam('migrated_from', $oldId)
-            ->save()
-        ;
+        if ($this->chats[$oldId]) {
+            $this->chats[$oldId]->setTelegramId($this->getChatId())
+                ->setType('supergroup')
+                ->setParam('migrated_from', $oldId)
+                ->save()
+            ;
+        }
     }
 
     /**
@@ -280,7 +282,7 @@ class YiiBot extends Telebot
      */
     protected function onChatMemberLeft(User $user)
     {
-        if ($this->chat && $this->user) {
+        if ($this->chat && $this->user && !$user->isBot()) {
             $participant = $this->getParticipant($this->chat->getId(), $this->user->getId());
             $participant->setStatus(TelegramChatParticipant::STATUS_LEFT)->save();
         }
@@ -293,7 +295,7 @@ class YiiBot extends Telebot
     public function handleUpdate($update)
     {
         $this->chat = $this->user = null;
-        if ($chatId = $this->getChatId()) {
+        if (($chatId = $this->getChatId()) && !$update->getMessage()->getMigrateFromChatId()) {
             try {
                 $chat = $this->getChat($chatId);
                 $this->chat = $chat;
