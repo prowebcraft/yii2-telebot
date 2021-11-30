@@ -25,7 +25,7 @@ use yii\log\Logger;
 
 class YiiBot extends Telebot
 {
-    protected ?int $botId = null;
+    public ?int $botId = null;
     protected ?TelegramBot $botModel = null;
     protected ?string $botToken = null;
     protected ?string $botName = null;
