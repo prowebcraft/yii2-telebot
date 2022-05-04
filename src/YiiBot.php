@@ -228,10 +228,11 @@ class YiiBot extends Telebot
      */
     public function getParticipant(int $chatId, int $userId, bool $reload = false): TelegramChatParticipant
     {
-        if (!$reload && isset($this->participants[$chatId])) {
-            $this->participants[$chatId]->cached = true;
+        $key = "$chatId.$userId";
+        if (!$reload && isset($this->participants[$key])) {
+            $this->participants[$key]->cached = true;
 
-            return $this->participants[$chatId];
+            return $this->participants[$key];
         }
 
         if (!($participant = TelegramChatParticipant::findOne([
@@ -249,7 +250,7 @@ class YiiBot extends Telebot
                 $this->error('Error saving chat participant to database: %s', $errors);
             }
         }
-        $this->participants[$chatId] = $participant;
+        $this->participants[$key] = $participant;
 
         return $participant;
     }
@@ -273,9 +274,12 @@ class YiiBot extends Telebot
      */
     protected function onNewChatMember(User $user)
     {
-        $this->saveUserInfo($user);
+        $telegramUser = $this->saveUserInfo($user);
+        if ($this->chat && !$user->isBot()) {
+            $participant = $this->getParticipant($this->chat->getId(), $telegramUser->getId());
+            $participant->setStatus(TelegramChatParticipant::STATUS_ACTIVE)->save();
+        }
     }
-
 
     /**
      * @inheritDoc
@@ -283,11 +287,11 @@ class YiiBot extends Telebot
     protected function onChatMemberLeft(User $user)
     {
         if ($this->chat && $this->user && !$user->isBot()) {
-            $participant = $this->getParticipant($this->chat->getId(), $this->user->getId());
+            $telegramUser = $this->getChat($user->getId());
+            $participant = $this->getParticipant($this->chat->getId(), $telegramUser->getId());
             $participant->setStatus(TelegramChatParticipant::STATUS_LEFT)->save();
         }
     }
-
 
     /**
      * @param \TelegramBot\Api\Types\Update $update
