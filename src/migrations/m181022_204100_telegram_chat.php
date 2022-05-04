@@ -26,6 +26,7 @@ class m181022_204100_telegram_chat extends Migration
             PRIMARY KEY (`id`),
             FOREIGN KEY (`bot_id`) REFERENCES `telegram_bot` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
             UNIQUE INDEX (`bot_id`,`telegram_id`),
+            INDEX (`telegram_id`), 
             INDEX (`last_message_at`)
             );
         ");
