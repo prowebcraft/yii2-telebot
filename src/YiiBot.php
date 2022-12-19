@@ -298,6 +298,7 @@ class YiiBot extends Telebot
      */
     public function handleUpdate($update)
     {
+        $this->update = $update;
         $this->chat = $this->user = null;
         if (($chatId = $this->getChatId()) && ($update->getMessage() && !$update->getMessage()->getMigrateFromChatId())) {
             try {
