@@ -498,4 +498,13 @@ class YiiBot extends Telebot
         return $userModel;
     }
 
+    /**
+     * Return current chat session
+     * @return TelegramChat|null
+     */
+    public function getCurrentChat(): ?TelegramChat
+    {
+        return $this->chat;
+    }
+
 }
