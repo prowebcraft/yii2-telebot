@@ -12,6 +12,7 @@ use prowebcraft\yii2telebot\models\TelegramChatParticipant;
  *
  * @property integer $id
  * @property integer $bot_id
+ * @property integer $status
  * @property string $telegram_id
  * @property string $type
  * @property string $created_at
@@ -41,12 +42,12 @@ class TelegramChatBase extends \yii\db\ActiveRecord
     {
         return [
             [['bot_id', 'telegram_id'], 'required'],
-            [['bot_id'], 'integer'],
+            [['bot_id', 'status'], 'integer'],
             [['created_at', 'last_message_at', 'params'], 'safe'],
             [['telegram_id'], 'string', 'max' => 20],
             [['type'], 'string', 'max' => 10],
             [['name'], 'string', 'max' => 255],
-            [['telegram_id', 'bot_id'], 'unique', 'targetAttribute' => ['telegram_id', 'bot_id'], 'message' => Yii::t('app', 'The combination of {firstLabels} and {lastLabel} has already been taken.', ['firstLabels' => 'Bot ID', 'lastLabel' => 'Telegram ID'])]
+            [['bot_id', 'telegram_id'], 'unique', 'targetAttribute' => ['bot_id', 'telegram_id'], 'message' => Yii::t('app', 'The combination of {firstLabels} and {lastLabel} has already been taken.', ['firstLabels' => 'Bot ID', 'lastLabel' => 'Telegram ID'])]
         ];
     }
 
@@ -58,6 +59,7 @@ class TelegramChatBase extends \yii\db\ActiveRecord
         return [
             'id' => 'ID',
             'bot_id' => 'Bot ID',
+            'status' => 'Status',
             'telegram_id' => 'Telegram ID',
             'type' => 'Type',
             'created_at' => 'Created At',
@@ -105,6 +107,26 @@ class TelegramChatBase extends \yii\db\ActiveRecord
     public function getBotId()
     {
         return $this->bot_id;
+    }
+
+    /**
+     * Set status property.
+     * @param integer $status
+     * @return $this
+     */
+    public function setStatus($status)
+    {
+        $this->status = $status;
+        return $this;
+    }
+
+    /**
+     * Get status property.
+     * @return integer
+     */
+    public function getStatus()
+    {
+        return $this->status;
     }
 
     /**
@@ -231,7 +253,7 @@ class TelegramChatBase extends \yii\db\ActiveRecord
         return $this->params;
     }
 
-        
+
     /**
      * @return \yii\db\ActiveQuery|TelegramBot     */
     public function getBot()

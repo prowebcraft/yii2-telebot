@@ -20,6 +20,8 @@ use Symfony\Component\Translation\Loader\CsvFileLoader;
 use Symfony\Component\Translation\Translator;
 use TelegramBot\Api\BotApi;
 use TelegramBot\Api\Client;
+use TelegramBot\Api\Types\Chat;
+use TelegramBot\Api\Types\ChatMemberUpdated;
 use TelegramBot\Api\Types\User;
 use yii\log\Logger;
 
@@ -292,6 +294,29 @@ class YiiBot extends Telebot
             $participant->setStatus(TelegramChatParticipant::STATUS_LEFT)->save();
         }
     }
+
+    /**
+     * @inheritDoc
+     */
+    protected function onBotKick(Chat $chat)
+    {
+        parent::onBotKick($chat);
+        $chat = $this->getChat($chat->getId());
+        $chat->setStatus($chat::STATUS_KICKED)->save();
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function onBotChatMemberStatusChange(ChatMemberUpdated $botChatMember, string $from, string $to)
+    {
+        parent::onBotChatMemberStatusChange($botChatMember, $from, $to);
+        if ($to !== 'left') {
+            $chat = $this->getChat($botChatMember->getChat()->getId());
+            $chat->setStatus($chat::STATUS_ACTIVE)->save();
+        }
+    }
+
 
     /**
      * @param \TelegramBot\Api\Types\Update $update

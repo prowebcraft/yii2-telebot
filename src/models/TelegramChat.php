@@ -11,6 +11,10 @@ class TelegramChat extends TelegramChatBase
 
     public bool $cached = false;
 
+    const STATUS_ACTIVE = 1;
+    const STATUS_LEFT = 0;
+    const STATUS_KICKED = 5;
+
     /**
      * @param string $telegramId
      * @return $this
