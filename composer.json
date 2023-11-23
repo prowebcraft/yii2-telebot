@@ -16,7 +16,8 @@
     "require": {
         "yiisoft/yii2": "*",
         "php": ">=7.4.0",
-        "prowebcraft/telebot": "dev-master"
+        "prowebcraft/telebot": "dev-master",
+        "prowebcraft/yii2-model-params": "dev-master"
     },
     "autoload": {
         "psr-4": {
