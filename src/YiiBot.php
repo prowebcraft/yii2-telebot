@@ -20,6 +20,7 @@ use Symfony\Component\Translation\Loader\CsvFileLoader;
 use Symfony\Component\Translation\Translator;
 use TelegramBot\Api\BotApi;
 use TelegramBot\Api\Client;
+use TelegramBot\Api\Types\CallbackQuery;
 use TelegramBot\Api\Types\Chat;
 use TelegramBot\Api\Types\ChatMemberUpdated;
 use TelegramBot\Api\Types\User;
@@ -192,9 +193,10 @@ class YiiBot extends Telebot
      * Получение модели чата
      * @param $id
      * @param bool $reload
-     * @return TelegramChat
+     * @param bool $create
+     * @return TelegramChat|null
      */
-    public function getChat($id, $reload = false): TelegramChat
+    public function getChat($id, bool $reload = false, bool $create = true): ?TelegramChat
     {
         if (!$reload && isset($this->chats[$id])) {
             $this->chats[$id]->cached = true;
@@ -206,6 +208,9 @@ class YiiBot extends Telebot
             'bot_id' => $this->botId,
             'telegram_id' => $id
         ]))) {
+            if (!$create) {
+                return null;
+            }
             $chat = new TelegramChat();
             $chat
                 ->setBotId($this->botId)
@@ -262,8 +267,8 @@ class YiiBot extends Telebot
      */
     protected function onMigrateToSuperGroup(int $oldId = null)
     {
-        if ($this->chats[$oldId]) {
-            $this->chats[$oldId]->setTelegramId($this->getChatId())
+        if ($chat = $this->chats[$oldId] ?? $this->getChat($oldId, create: false)) {
+            $chat->setTelegramId($this->getChatId())
                 ->setType('supergroup')
                 ->setParam('migrated_from', $oldId)
                 ->save()
@@ -312,8 +317,9 @@ class YiiBot extends Telebot
     {
         parent::onBotChatMemberStatusChange($botChatMember, $from, $to);
         if ($to !== 'left') {
-            $chat = $this->getChat($botChatMember->getChat()->getId());
-            $chat->setStatus($chat::STATUS_ACTIVE)->save();
+            if ($chat = $this->getChat($botChatMember->getChat()->getId(), create: false)) {
+                $chat->setParam('bot_status', $to)->setStatus($chat::STATUS_ACTIVE)->save();
+            }
         }
     }
 
@@ -325,13 +331,15 @@ class YiiBot extends Telebot
     {
         $this->update = $update;
         $this->chat = $this->user = null;
-        if (($chatId = $this->getChatId()) && ($update->getMessage() && !$update->getMessage()->getMigrateFromChatId())) {
+        if (($chatId = $this->getChatId())
+            && ($context = $this->getContext())
+            && ($message = $this->getMessageFromContext($context))
+            && !$message->getMigrateFromChatId()
+            && !$message->getMigrateToChatId()
+        ) {
             try {
                 $chat = $this->getChat($chatId);
                 $this->chat = $chat;
-                if (!$message = $this->getContext()) {
-                    return;
-                }
                 if (!$user = $message->getFrom()) {
                     return;
                 }
@@ -351,11 +359,17 @@ class YiiBot extends Telebot
                     ->setType($this->getChatType())
                     ->save();
 
-                $message = new TelegramChatMessage();
-                $message
+                if ($context instanceof CallbackQuery) {
+                    $text = sprintf('[Callback Data] %s', $context->getData());
+                } else {
+                    $text = $message?->getText();
+                }
+
+                $chatMessage = new TelegramChatMessage();
+                $chatMessage
                     ->setChatId($chatId)
                     ->setMessageId($this->getMessageId())
-                    ->setText($update->getMessage() ? $update->getMessage()->getText() : null)
+                    ->setText($text)
                     ->setDirection(TelegramChatMessage::DIRECTION_FROM)
                     ->setParams($update->toJson(true))
                     ->setCreatedAt(time())
@@ -427,10 +441,13 @@ class YiiBot extends Telebot
      */
     public function getChatConfig($key, $default = null, $chatId = null)
     {
-        if ($chatId === null) $chatId = $this->getChatId();
+        if ($chatId === null) {
+            $chatId = $this->getChatId();
+        }
         if ($chatId) {
-            $chat = $this->getChat($chatId);
-            return $chat->getParam($key, $default);
+            if ($chat = $this->getChat($chatId, create: false)) {
+                return $chat->getParam($key, $default);
+            }
         }
         return false;
     }
