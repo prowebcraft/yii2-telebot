@@ -340,7 +340,7 @@ class YiiBot extends Telebot
             try {
                 $chat = $this->getChat($chatId);
                 $this->chat = $chat;
-                if (!$user = $message->getFrom()) {
+                if (!$user = $context->getFrom() ?: $message->getFrom()) {
                     return;
                 }
                 if ($this->isChatPrivate()) {
