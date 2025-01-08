@@ -549,4 +549,13 @@ class YiiBot extends Telebot
         return $this->chat;
     }
 
+    /**
+     * Return current bot model
+     * @return TelegramBot
+     */
+    public function getBotModel(): TelegramBot
+    {
+        return $this->botModel;
+    }
+
 }
