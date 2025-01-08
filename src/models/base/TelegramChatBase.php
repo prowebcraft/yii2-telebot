@@ -253,7 +253,7 @@ class TelegramChatBase extends \yii\db\ActiveRecord
         return $this->params;
     }
 
-
+        
     /**
      * @return \yii\db\ActiveQuery|TelegramBot     */
     public function getBot()

@@ -53,7 +53,7 @@ class TelegramChatMessageBase extends \yii\db\ActiveRecord
         return [
             'id' => 'ID',
             'chat_id' => 'Chat ID',
-            'direction' => 'Направление',
+            'direction' => 'Direction',
             'message_id' => 'Message ID',
             'text' => 'Text',
             'created_at' => 'Created At',
@@ -103,7 +103,6 @@ class TelegramChatMessageBase extends \yii\db\ActiveRecord
 
     /**
      * Set direction property.
-     * Направление
      * @param string $direction
      * @return $this
      */
@@ -115,7 +114,6 @@ class TelegramChatMessageBase extends \yii\db\ActiveRecord
 
     /**
      * Get direction property.
-     * Направление
      * @return string
      */
     public function getDirection()
