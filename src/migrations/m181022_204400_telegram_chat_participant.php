@@ -14,19 +14,40 @@ class m181022_204400_telegram_chat_participant extends Migration
      */
     public function safeUp()
     {
-        $this->execute("
-            CREATE TABLE `telegram_chat_participant`  (
-              `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
-              `chat_id` int(10) UNSIGNED NOT NULL,
-              `user_id` int(10) UNSIGNED NOT NULL,
-              `status` tinyint(10) NULL,
-              `joined_at` datetime NULL,
-              `updated_at` datetime NULL ON UPDATE CURRENT_TIMESTAMP,
-              PRIMARY KEY (`id`),
-              FOREIGN KEY (`chat_id`) REFERENCES `telegram_chat` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-              FOREIGN KEY (`user_id`) REFERENCES `telegram_chat` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+        $defaultValue = 'CURRENT_TIMESTAMP';
+        if ($this->db->driverName !== 'sqlite') {
+            $defaultValue .= ' ON UPDATE CURRENT_TIMESTAMP';
+        }
+        $this->createTable('telegram_chat_participant', [
+            'id' => $this->primaryKey()->unsigned(),
+            'chat_id' => $this->integer()->unsigned()->notNull(),
+            'user_id' => $this->integer()->unsigned()->notNull(),
+            'status' => $this->tinyInteger()->null(),
+            'joined_at' => $this->dateTime()->null(),
+            'updated_at' => $this->dateTime()->null()->defaultExpression($defaultValue),
+        ]);
+
+        if ($this->db->driverName !== 'sqlite') {
+            $this->addForeignKey(
+                'fk-telegram_chat_participant-chat_id',
+                'telegram_chat_participant',
+                'chat_id',
+                'telegram_chat',
+                'id',
+                'CASCADE',
+                'CASCADE',
             );
-        ");
+
+            $this->addForeignKey(
+                'fk-telegram_chat_participant-user_id',
+                'telegram_chat_participant',
+                'user_id',
+                'telegram_chat',
+                'id',
+                'CASCADE',
+                'CASCADE',
+            );
+        }
     }
 
     /**
@@ -34,10 +55,7 @@ class m181022_204400_telegram_chat_participant extends Migration
      */
     public function safeDown()
     {
-        $this->execute("
-            DROP TABLE telegram_chat_participant;
-        ");
-
+        $this->dropTable('telegram_chat_participant');
         return true;
     }
 

@@ -14,22 +14,45 @@ class m181022_204100_telegram_chat extends Migration
      */
     public function safeUp()
     {
-        $this->execute("
-            CREATE TABLE `telegram_chat` (
-                `id`  int(10) UNSIGNED NOT NULL AUTO_INCREMENT ,
-                `bot_id`  int(10) UNSIGNED NOT NULL,
-                `telegram_id`  varchar(20) NOT NULL ,
-                `created_at`  datetime NULL DEFAULT CURRENT_TIMESTAMP,
-                `last_message_at`  datetime NULL,
-                `name`  varchar(255) NULL ,
-                `params`  longtext NULL ,
-            PRIMARY KEY (`id`),
-            FOREIGN KEY (`bot_id`) REFERENCES `telegram_bot` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-            UNIQUE INDEX (`bot_id`,`telegram_id`),
-            INDEX (`telegram_id`), 
-            INDEX (`last_message_at`)
+        $this->createTable('telegram_chat', [
+            'id' => $this->primaryKey()->unsigned(),
+            'bot_id' => $this->integer()->unsigned()->notNull(),
+            'telegram_id' => $this->string(20)->notNull(),
+            'created_at' => $this->dateTime()->defaultExpression('CURRENT_TIMESTAMP'),
+            'last_message_at' => $this->dateTime()->null(),
+            'name' => $this->string()->null(),
+            'params' => $this->text()->null(),
+        ]);
+        if ($this->db->driverName !== 'sqlite') {
+            $this->addForeignKey(
+                'fk_telegram_chat_bot_id',
+                'telegram_chat',
+                'bot_id',
+                'telegram_bot',
+                'id',
+                'CASCADE',
+                'CASCADE',
             );
-        ");
+        }
+
+        $this->createIndex(
+            'idx_unique_bot_telegram_id',
+            'telegram_chat',
+            ['bot_id', 'telegram_id'],
+            true,
+        );
+
+        $this->createIndex(
+            'idx_telegram_id',
+            'telegram_chat',
+            'telegram_id',
+        );
+
+        $this->createIndex(
+            'idx_last_message_at',
+            'telegram_chat',
+            'last_message_at',
+        );
     }
 
     /**
@@ -37,23 +60,14 @@ class m181022_204100_telegram_chat extends Migration
      */
     public function safeDown()
     {
-        echo "m181022_204456_telegram_chats cannot be reverted.\n";
+        $this->dropIndex('idx_last_message_at', 'telegram_chat');
+        $this->dropIndex('idx_telegram_id', 'telegram_chat');
+        $this->dropIndex('idx_unique_bot_telegram_id', 'telegram_chat');
+        if ($this->db->driverName !== 'sqlite') {
+            $this->dropForeignKey('fk_telegram_chat_bot_id', 'telegram_chat');
+        }
+        $this->dropTable('telegram_chat');
 
-        return false;
+        return true;
     }
-
-    /*
-    // Use up()/down() to run migration code without a transaction.
-    public function up()
-    {
-
-    }
-
-    public function down()
-    {
-        echo "m181022_204456_telegram_chats cannot be reverted.\n";
-
-        return false;
-    }
-    */
 }

@@ -14,11 +14,16 @@ class m181022_204300_telegram_chat_type extends Migration
      */
     public function safeUp()
     {
-        $this->execute("
-            ALTER TABLE `telegram_chat` 
-            ADD COLUMN `type` varchar(10) NULL AFTER `telegram_id`,
-            ADD INDEX `type`(`type`);
-        ");
+        $this->addColumn(
+            'telegram_chat',
+            'type',
+            $this->string(10)->null()->after('telegram_id'),
+        );
+        $this->createIndex(
+            'idx-telegram_chat-type',
+            'telegram_chat',
+            'type',
+        );
     }
 
     /**
@@ -26,27 +31,7 @@ class m181022_204300_telegram_chat_type extends Migration
      */
     public function safeDown()
     {
-        $this->execute("
-            ALTER TABLE `telegram_chat` 
-            DROP COLUMN `type`
-            ;
-        ");
-
+        $this->dropColumn('telegram_chat', 'type');
         return true;
     }
-
-    /*
-    // Use up()/down() to run migration code without a transaction.
-    public function up()
-    {
-
-    }
-
-    public function down()
-    {
-        echo "m181022_204456_telegram_chats cannot be reverted.\n";
-
-        return false;
-    }
-    */
 }

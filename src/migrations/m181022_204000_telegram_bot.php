@@ -9,21 +9,16 @@ use yii\db\Migration;
  */
 class m181022_204000_telegram_bot extends Migration
 {
-
     /**
      * {@inheritdoc}
      */
     public function safeUp()
     {
-        $this->execute("
-            CREATE TABLE `telegram_bot` (
-                `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT ,
-                `name`  varchar(100) NOT NULL,
-                `params`  longtext NULL,
-            PRIMARY KEY (`id`),
-            UNIQUE INDEX (`name`) 
-            );
-        ");
+        $this->createTable('telegram_bot', [
+            'id' => $this->primaryKey()->unsigned(),
+            'name' => $this->string(100)->notNull()->unique(),
+            'params' => $this->text()->null(),
+        ]);
     }
 
     /**
@@ -31,23 +26,6 @@ class m181022_204000_telegram_bot extends Migration
      */
     public function safeDown()
     {
-        echo "m181022_204456_telegram_chats cannot be reverted.\n";
-
-        return false;
+        $this->dropTable('telegram_bot');
     }
-
-    /*
-    // Use up()/down() to run migration code without a transaction.
-    public function up()
-    {
-
-    }
-
-    public function down()
-    {
-        echo "m181022_204456_telegram_chats cannot be reverted.\n";
-
-        return false;
-    }
-    */
 }

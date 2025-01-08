@@ -7,7 +7,6 @@ use yii\db\Migration;
 /**
  * Class m181022_204619_telegram_messages
  */
-
 class m181022_204200_telegram_chat_message extends Migration
 {
     /**
@@ -15,21 +14,39 @@ class m181022_204200_telegram_chat_message extends Migration
      */
     public function safeUp()
     {
-        $this->execute("
-        CREATE TABLE `telegram_chat_message` (
-            `id`  int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
-            `chat_id`  varchar(20) NOT NULL ,
-            `direction` varchar(10) null comment 'Направление',
-            `message_id`  int(11) NULL ,
-            `text` text NULL ,
-            `created_at`  datetime NULL DEFAULT CURRENT_TIMESTAMP,
-            `params`  longtext NULL ,
-        PRIMARY KEY (`id`),
-        FOREIGN KEY (`chat_id`) REFERENCES `telegram_chat` (`telegram_id`) ON DELETE CASCADE ON UPDATE CASCADE,
-        INDEX (`created_at`),
-        UNIQUE INDEX (`chat_id`, `message_id`) 
+        $this->createTable('telegram_chat_message', [
+            'id' => $this->primaryKey()->unsigned(),
+            'chat_id' => $this->string(20)->notNull(),
+            'direction' => $this->string(10)->null(),
+            'message_id' => $this->integer(11)->null(),
+            'text' => $this->text()->null(),
+            'created_at' => $this->dateTime()->defaultExpression('CURRENT_TIMESTAMP'),
+            'params' => $this->text()->null(),
+        ]);
+        if ($this->db->driverName !== 'sqlite') {
+            $this->addForeignKey(
+                'fk_telegram_chat_message_chat_id',
+                'telegram_chat_message',
+                'chat_id',
+                'telegram_chat',
+                'telegram_id',
+                'CASCADE',
+                'CASCADE',
+            );
+        }
+
+        $this->createIndex(
+            'idx_telegram_chat_message_created_at',
+            'telegram_chat_message',
+            'created_at',
         );
-      ");
+
+        $this->createIndex(
+            'idx_telegram_chat_message_chat_id_message_id',
+            'telegram_chat_message',
+            ['chat_id', 'message_id'],
+            true,
+        );
     }
 
     /**
@@ -37,9 +54,13 @@ class m181022_204200_telegram_chat_message extends Migration
      */
     public function safeDown()
     {
-        echo "m181022_204619_telegram_messages cannot be reverted.\n";
-
-        return false;
+        if ($this->db->driverName !== 'sqlite') {
+            $this->dropForeignKey('fk_telegram_chat_message_chat_id', 'telegram_chat_message');
+        }
+        $this->dropIndex('idx_telegram_chat_message_created_at', 'telegram_chat_message');
+        $this->dropIndex('idx_telegram_chat_message_chat_id_message_id', 'telegram_chat_message');
+        $this->dropTable('telegram_chat_message');
+        return true;
     }
 
     /*

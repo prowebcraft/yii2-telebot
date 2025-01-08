@@ -14,11 +14,16 @@ class m181022_204500_telegram_chat_status extends Migration
      */
     public function safeUp()
     {
-        $this->execute("
-            ALTER TABLE `telegram_chat` 
-                ADD COLUMN `status` tinyint NULL DEFAULT 1 AFTER `bot_id`,
-                ADD INDEX(`status`);
-        ");
+        $this->addColumn(
+            'telegram_chat',
+            'status',
+            $this->tinyInteger()->null()->defaultValue(1)->after('bot_id'),
+        );
+        $this->createIndex(
+            'idx-telegram_chat-status',
+            'telegram_chat',
+            'status',
+        );
     }
 
     /**
@@ -26,10 +31,7 @@ class m181022_204500_telegram_chat_status extends Migration
      */
     public function safeDown()
     {
-        $this->execute("
-           ALTER TABLE `telegram_chat` 
-            DROP COLUMN `status`
-        ");
+        $this->dropColumn('telegram_chat', 'status');
 
         return true;
     }
