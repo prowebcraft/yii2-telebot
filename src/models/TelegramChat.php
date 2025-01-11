@@ -35,8 +35,21 @@ class TelegramChat extends TelegramChatBase
     {
         return self::findOne([
             'telegram_id' => $telegramId,
-            'bot_id' => $botId
+            'bot_id' => $botId,
         ]);
+    }
+
+    /**
+     * @param string $format The format of the mention link, either 'html' or 'markdown'.
+     * @return string The mention link formatted as specified.
+     */
+    public function getMentionWithLink($format = 'html'): string
+    {
+        if ($format === 'markdown') {
+            return sprintf('[%s](tg://user?id=%s)', $this->getName(), $this->getTelegramId());
+        }
+
+        return sprintf('<a href="tg://user?id=%s">%s</a>', $this->getTelegramId(), $this->getName());
     }
 
 }
