@@ -346,16 +346,15 @@ class YiiBot extends Telebot
                 if ($this->isChatPrivate()) {
                     $this->saveUserInfo($user);
                     $this->user = $chat;
-                    $chatName = $this->getFromName($message, true);
                 } else {
                     // group chat
                     $userModel = $this->saveUserInfo($user);
                     $this->user = $userModel;
                     $participant = $this->getParticipant($chat->id, $userModel->id);
                     $chatName = $message?->getChat()->getTitle();
+                    $chat->setName($chatName);
                 }
                 $chat->setLastMessageAt(time())
-                    ->setName($chatName)
                     ->setType($this->getChatType())
                     ->save();
 
@@ -521,11 +520,10 @@ class YiiBot extends Telebot
     {
         $userId = $user->getId();
         $userModel = $this->getChat($userId);
-        if (!$userModel->cached) {
-            // Update user info
-            $fromName = $user->getFirstName()
-                . ($user->getLastName() ? ' ' . $user->getLastName() : '');
-            $fromName .= ($user->getUsername() ? ' @' . $user->getUsername() : '');
+        $fromName = $user->getFirstName()
+            . ($user->getLastName() ? ' ' . $user->getLastName() : '');
+        $fromName .= ($user->getUsername() ? ' @' . $user->getUsername() : '');
+        if ($userModel->getName() !== $fromName) {
             $userModel->setType('private')
                 ->setName($fromName)
                 ->setParam('user', [
