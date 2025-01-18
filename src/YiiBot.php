@@ -23,6 +23,7 @@ use TelegramBot\Api\Client;
 use TelegramBot\Api\Types\CallbackQuery;
 use TelegramBot\Api\Types\Chat;
 use TelegramBot\Api\Types\ChatMemberUpdated;
+use TelegramBot\Api\Types\ReplyParameters;
 use TelegramBot\Api\Types\User;
 use yii\log\Logger;
 
@@ -402,7 +403,8 @@ class YiiBot extends Telebot
         $replyToMessageId = null,
         $replyMarkup = null,
         $disableNotification = false,
-        $allowChunks = true
+        $allowChunks = true,
+        ?ReplyParameters $replyParameters = null,
     ) {
         $chatMessage = null;
         try {
