@@ -265,7 +265,7 @@ class TelegramChatBase extends \yii\db\ActiveRecord
      * @return \yii\db\ActiveQuery|TelegramChatMessage     */
     public function getTelegramChatMessages()
     {
-        return $this->hasMany(TelegramChatMessage::className(), ['chat_id' => 'telegram_id']);
+        return $this->hasMany(TelegramChatMessage::className(), ['user_id' => 'telegram_id']);
     }
 
     /**

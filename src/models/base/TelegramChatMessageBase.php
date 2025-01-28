@@ -10,6 +10,7 @@ use prowebcraft\yii2telebot\models\TelegramChat;
  *
  * @property integer $id
  * @property string $chat_id
+ * @property string $user_id
  * @property string $direction
  * @property integer $message_id
  * @property string $text
@@ -17,6 +18,7 @@ use prowebcraft\yii2telebot\models\TelegramChat;
  * @property string $params
  *
  * @property TelegramChat $chat
+ * @property TelegramChat $user
  */
 class TelegramChatMessageBase extends \yii\db\ActiveRecord
 {
@@ -39,7 +41,7 @@ class TelegramChatMessageBase extends \yii\db\ActiveRecord
             [['message_id'], 'integer'],
             [['text'], 'string'],
             [['created_at', 'params'], 'safe'],
-            [['chat_id'], 'string', 'max' => 20],
+            [['chat_id', 'user_id'], 'string', 'max' => 20],
             [['direction'], 'string', 'max' => 10],
             [['chat_id', 'message_id'], 'unique', 'targetAttribute' => ['chat_id', 'message_id'], 'message' => Yii::t('app', 'The combination of {firstLabels} and {lastLabel} has already been taken.', ['firstLabels' => 'Chat ID', 'lastLabel' => 'Message ID'])]
         ];
@@ -53,6 +55,7 @@ class TelegramChatMessageBase extends \yii\db\ActiveRecord
         return [
             'id' => 'ID',
             'chat_id' => 'Chat ID',
+            'user_id' => 'User ID',
             'direction' => 'Direction',
             'message_id' => 'Message ID',
             'text' => 'Text',
@@ -99,6 +102,26 @@ class TelegramChatMessageBase extends \yii\db\ActiveRecord
     public function getChatId()
     {
         return $this->chat_id;
+    }
+
+    /**
+     * Set user_id property.
+     * @param string $userId
+     * @return $this
+     */
+    public function setUserId($userId)
+    {
+        $this->user_id = $userId;
+        return $this;
+    }
+
+    /**
+     * Get user_id property.
+     * @return string
+     */
+    public function getUserId()
+    {
+        return $this->user_id;
     }
 
     /**
@@ -209,6 +232,13 @@ class TelegramChatMessageBase extends \yii\db\ActiveRecord
     public function getChat()
     {
         return $this->hasOne(TelegramChat::className(), ['telegram_id' => 'chat_id']);
+    }
+
+    /**
+     * @return \yii\db\ActiveQuery|TelegramChat     */
+    public function getUser()
+    {
+        return $this->hasOne(TelegramChat::className(), ['telegram_id' => 'user_id']);
     }
 
 }

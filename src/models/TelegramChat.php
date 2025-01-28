@@ -52,4 +52,11 @@ class TelegramChat extends TelegramChatBase
         return sprintf('<a href="tg://user?id=%s">%s</a>', $this->getTelegramId(), $this->getName());
     }
 
+    /**
+     * @return \yii\db\ActiveQuery|TelegramChatMessage     */
+    public function getTelegramChatMessages()
+    {
+        return $this->hasMany(TelegramChatMessage::className(), ['chat_id' => 'telegram_id']);
+    }
+
 }

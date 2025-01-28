@@ -368,6 +368,7 @@ class YiiBot extends Telebot
                 $chatMessage = new TelegramChatMessage();
                 $chatMessage
                     ->setChatId($chatId)
+                    ->setUserId($userModel?->telegram_id ?? $chatId)
                     ->setMessageId($this->getMessageId())
                     ->setText($text)
                     ->setDirection(TelegramChatMessage::DIRECTION_FROM)
