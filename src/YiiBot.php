@@ -34,7 +34,7 @@ class YiiBot extends Telebot
     protected ?string $botToken = null;
     protected ?string $botName = null;
     protected ?array $botParams = null;
-    /** @var array|TelegramChat[]  */
+    /** @var array|TelegramChat[] */
     protected array $chats = [];
     /** @var array|TelegramChatParticipant[] */
     protected array $participants = [];
@@ -44,10 +44,10 @@ class YiiBot extends Telebot
     public function __construct(string $name)
     {
         if (!$botConfig = \Yii::$app->params['bots'][$name] ?? null) {
-            throw new \InvalidArgumentException('Please add bot '.$name.' config in params');
+            throw new \InvalidArgumentException('Please add bot ' . $name . ' config in params');
         }
         if (empty($botConfig['token'])) {
-            throw new \InvalidArgumentException('Please fill bot '.$name.' token in params');
+            throw new \InvalidArgumentException('Please fill bot ' . $name . ' token in params');
         }
         $this->botParams = $botConfig;
         $this->botToken = $this->getBotParam('token');
@@ -61,7 +61,7 @@ class YiiBot extends Telebot
         //init bot model
         if (!$botModel = TelegramBot::findOne(['name' => $name])) {
             $botModel = new TelegramBot([
-                'name' => $name
+                'name' => $name,
             ]);
             $botModel->setParam('className', static::class);
             if (!empty($botConfig['default_bot_config']) && is_array($botConfig['default_bot_config'])) {
@@ -105,7 +105,8 @@ class YiiBot extends Telebot
         $this->restoreReplies();
 
         /** @var BotApi|Client $bot */
-        $bot = new Basic($this->botToken, null, $this->getConfig('config.proxy'));
+        $proxy = $this->getConfig('config.proxy') ?? $this->getBotParam('proxy');
+        $bot = new Basic($this->botToken, null, $proxy);
         $this->telegram = $bot;
 
         //Init Translations
@@ -113,8 +114,12 @@ class YiiBot extends Telebot
         //Add Default Resourse
         $this->translator->addLoader('csv', new CsvFileLoader());
         $filesDir = dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . 'telebot' . DIRECTORY_SEPARATOR . 'files';
-        $this->translator->addResource('csv', $filesDir . DIRECTORY_SEPARATOR . 'locale'
-            . DIRECTORY_SEPARATOR . 'system.ru.csv', 'ru');
+        $this->translator->addResource(
+            'csv',
+            $filesDir . DIRECTORY_SEPARATOR . 'locale'
+            . DIRECTORY_SEPARATOR . 'system.ru.csv',
+            'ru',
+        );
         $this->configTranslations($this->translator);
     }
 
@@ -139,7 +144,7 @@ class YiiBot extends Telebot
                 $yiiLevel = Logger::LEVEL_TRACE;
                 break;
         }
-        \Yii::getLogger()->log($message, $yiiLevel, 'bot.'.$this->botName);
+        \Yii::getLogger()->log($message, $yiiLevel, 'bot.' . $this->botName);
     }
 
 
@@ -207,7 +212,7 @@ class YiiBot extends Telebot
 
         if (!($chat = TelegramChat::findOne([
             'bot_id' => $this->botId,
-            'telegram_id' => $id
+            'telegram_id' => $id,
         ]))) {
             if (!$create) {
                 return null;
@@ -272,8 +277,7 @@ class YiiBot extends Telebot
             $chat->setTelegramId($this->getChatId())
                 ->setType('supergroup')
                 ->setParam('migrated_from', $oldId)
-                ->save()
-            ;
+                ->save();
         }
     }
 
@@ -421,13 +425,22 @@ class YiiBot extends Telebot
                     'reply_to_message_id' => $replyToMessageId,
                     'replyMarkup' => $replyMarkup,
                     'disable_notification' => $disableNotification,
-                    'allow_chunks' => $allowChunks
+                    'allow_chunks' => $allowChunks,
                 ])
                 ->save();
         } catch (\Throwable $e) {
             $this->error('Error saving outgoing chat message: %s', $e->getMessage());
         }
-        $result = parent::sendMessage($to, $message, $parse, $disablePreview, $replyToMessageId, $replyMarkup, $disableNotification, $allowChunks);
+        $result = parent::sendMessage(
+            $to,
+            $message,
+            $parse,
+            $disablePreview,
+            $replyToMessageId,
+            $replyMarkup,
+            $disableNotification,
+            $allowChunks,
+        );
         if ($chatMessage) {
             $chatMessage->setMessageId($result->getMessageId())->save();
         }
@@ -464,12 +477,15 @@ class YiiBot extends Telebot
      */
     public function setChatConfig($key, $value, $save = true, $chatId = null)
     {
-        if ($chatId === null) $chatId = $this->getChatId();
+        if ($chatId === null) {
+            $chatId = $this->getChatId();
+        }
         if ($chatId) {
             $chat = $this->getChat($chatId);
             $chat->setParam($key, $value);
-            if ($save)
+            if ($save) {
                 $chat->save();
+            }
             return $this;
         }
         return false;
@@ -484,12 +500,15 @@ class YiiBot extends Telebot
      */
     public function addChatConfig($key, $value, $save = true, $chatId = null)
     {
-        if ($chatId === null) $chatId = $this->getChatId();
+        if ($chatId === null) {
+            $chatId = $this->getChatId();
+        }
         if ($chatId) {
             $chat = $this->getChat($chatId);
             $chat->addParam($key, $value);
-            if ($save)
+            if ($save) {
                 $chat->save();
+            }
             return $this;
         }
         return false;
@@ -503,12 +522,15 @@ class YiiBot extends Telebot
      */
     public function deleteChatConfig($key, $save = true, $chatId = null)
     {
-        if ($chatId === null) $chatId = $this->getChatId();
+        if ($chatId === null) {
+            $chatId = $this->getChatId();
+        }
         if ($chatId) {
             $chat = $this->getChat($chatId);
             $chat->unsetParam($key);
-            if ($save)
+            if ($save) {
                 $chat->save();
+            }
             return $this;
         }
         return false;
